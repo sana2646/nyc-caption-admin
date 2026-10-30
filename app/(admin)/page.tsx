@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element, react-hooks/purity -- server-rendered on every request, so "now" is expected */
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/auth'
 import { type Caption, type Profile, type Vote, fullName, scoreMap } from '@/lib/data'
@@ -33,11 +33,24 @@ function lastDays(n: number) {
 export default async function OverviewPage() {
   const { supabase } = await requireAdmin()
 
-  const [{ data: p }, { data: c }, { data: v }] = await Promise.all([
+  const [{ data: p }, { data: c }, { data: v }, { data: rq }, { data: rs }] = await Promise.all([
     supabase.from('profiles').select('id, first_name, last_name, avatar_url, is_superadmin, updated_at'),
     supabase.from('captions').select('id, user_id, image_url, prompt, caption, theme, created_at'),
     supabase.from('votes').select('id, caption_id, user_id, value, created_at'),
+    supabase.from('caption_requests').select('id, status, created_at'),
+    supabase.from('llm_model_responses').select('id, model_name, status, processing_time_ms'),
   ])
+  const requests = (rq ?? []) as { id: number; status: string; created_at: string }[]
+  const responses = (rs ?? []) as { id: number; model_name: string | null; status: string; processing_time_ms: number | null }[]
+  const okRequests = requests.filter((x) => x.status === 'success').length
+  const failed = requests.filter((x) => x.status === 'error').length
+  const successRate = requests.length ? Math.round((okRequests / requests.length) * 100) : 0
+  const times = responses.map((x) => x.processing_time_ms).filter((x): x is number => typeof x === 'number')
+  const avgMs = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0
+  const slowestMs = times.length ? Math.max(...times) : 0
+  const modelUse = new Map<string, number>()
+  for (const x of responses) modelUse.set(x.model_name ?? 'unknown', (modelUse.get(x.model_name ?? 'unknown') ?? 0) + 1)
+  const topModel = [...modelUse.entries()].sort((a, b) => b[1] - a[1])[0]
   const profiles = (p ?? []) as Profile[]
   const captions = (c ?? []) as Caption[]
   const votes = (v ?? []) as Vote[]
@@ -153,6 +166,40 @@ export default async function OverviewPage() {
           <div className="kpi-sub">of captions have a positive score · {unseen} never voted on</div>
         </div>
       </div>
+
+      <section className="card panel" style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div className="section-title">AI pipeline health</div>
+            <div className="muted small">Logged on every caption request (tracking started this week)</div>
+          </div>
+          <div className="chips">
+            <Link href="/db/generation-requests" className="chip">Requests →</Link>
+            <Link href="/db/llm-responses" className="chip">LLM responses →</Link>
+          </div>
+        </div>
+        <div className="grid pipeline" style={{ marginTop: 14, marginBottom: 0 }}>
+          <div>
+            <div className="kpi-label">Requests</div>
+            <div className="kpi-value num">{requests.length}</div>
+          </div>
+          <div>
+            <div className="kpi-label">Success rate</div>
+            <div className="kpi-value num" style={{ color: failed ? 'var(--sunset)' : undefined }}>{requests.length ? `${successRate}%` : '—'}</div>
+            <div className="kpi-sub">{failed} failed</div>
+          </div>
+          <div>
+            <div className="kpi-label">Avg. AI response time</div>
+            <div className="kpi-value num">{avgMs ? `${(avgMs / 1000).toFixed(1)}s` : '—'}</div>
+            <div className="kpi-sub">slowest {slowestMs ? `${(slowestMs / 1000).toFixed(1)}s` : '—'}</div>
+          </div>
+          <div>
+            <div className="kpi-label">Most-used model</div>
+            <div className="kpi-value" style={{ fontSize: 18, marginTop: 10 }}>{topModel?.[0] ?? '—'}</div>
+            <div className="kpi-sub">{topModel ? `${topModel[1]} calls` : 'no calls yet'}</div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid two">
         <section className="card panel">

@@ -160,3 +160,27 @@ details > summary::-webkit-details-marker { display: none; }
 .center-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: radial-gradient(circle at 30% 20%, rgba(255,122,89,.12), transparent 40%), radial-gradient(circle at 70% 80%, rgba(124,108,255,.14), transparent 45%), var(--bg); }
 .auth-card { width: 100%; max-width: 400px; padding: 36px 32px; text-align: center; }
 .lock { font-size: 40px; margin-bottom: 10px; }
+
+/* ---------- Week 7: grouped nav, generic tables, images ---------- */
+.side-links { overflow-y: auto; min-height: 0; }
+.side-group { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
+.side-group-title { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); padding: 4px 10px; }
+.side-link { padding: 7px 10px; font-size: 13px; }
+
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+.edit-pop[open] > summary::before { content: ''; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 40; cursor: default; }
+.pop-form { position: fixed; z-index: 50; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(560px, 92vw); max-height: 86vh; overflow-y: auto; display: grid; gap: 12px; text-align: left; background: var(--card); box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+
+.long-cell > summary { cursor: pointer; color: var(--text); }
+.long-cell[open] > summary { display: none; }
+.long-text { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.5; color: var(--muted); max-height: 360px; overflow-y: auto; margin: 0; }
+
+.uploader { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; align-items: flex-start; }
+.dropzone { width: 180px; height: 140px; border: 2px dashed var(--border); border-radius: 12px; background: var(--bg); color: var(--muted); cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; line-height: 1.6; }
+.dropzone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone img { width: 100%; height: 100%; object-fit: cover; }
+.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.image-card { overflow: hidden; }
+.image-card > a img { width: 100%; height: 180px; object-fit: cover; display: block; }
+
+.pipeline { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 16px; }
